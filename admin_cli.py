@@ -1,4 +1,5 @@
-import os, json, time, threading, bcrypt, requests
+import os, json, time, threading, requests
+from passlib.hash import bcrypt_sha256
 from flask import Flask, request, jsonify
 from rich.console import Console
 from rich.prompt import Prompt
@@ -57,10 +58,10 @@ def log(msg):
         f.write(f"{datetime.now()} | {msg}\n")
 
 def hash_pw(password):
-    return bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
+    return bcrypt_sha256.hash(password)
 
 def verify_pw(pw, hash):
-    return bcrypt.checkpw(pw.encode(), hash.encode())
+    return bcrypt_sha256.verify(pw, hash)
 
 # --- User System ---
 def load_accounts():
@@ -141,7 +142,7 @@ def main_cli(user):
         cmd = Prompt.ask(f"[bold cyan]{user}[/bold cyan] ➜ ", default="").strip()
 
         if cmd.startswith("connect "):
-            current_game = cmd.split(" ",1)[1]
+            current_game = cmd.split(" ", 1)[1]
             console.print(f"[green]Connected to:[/green] {current_game}")
 
         elif cmd.startswith("kick ") or cmd.startswith("announce "):
