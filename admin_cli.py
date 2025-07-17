@@ -1,5 +1,4 @@
-import os, json, time, threading, requests
-from passlib.hash import bcrypt_sha256
+import os, json, time, threading, requests, hashlib
 from flask import Flask, request, jsonify
 from rich.console import Console
 from rich.prompt import Prompt
@@ -58,10 +57,10 @@ def log(msg):
         f.write(f"{datetime.now()} | {msg}\n")
 
 def hash_pw(password):
-    return bcrypt_sha256.hash(password)
+    return hashlib.sha256(password.encode()).hexdigest()
 
-def verify_pw(pw, hash):
-    return bcrypt_sha256.verify(pw, hash)
+def verify_pw(password, hashed):
+    return hash_pw(password) == hashed
 
 # --- User System ---
 def load_accounts():
@@ -113,7 +112,7 @@ def login_system():
 
     if action == "2":
         user = Prompt.ask("New Username")
-        pw = Prompt.ask("New Password", password=True)
+        pw = Prompt.ask("New Password")
         accounts[user] = hash_pw(pw)
         save_accounts(accounts)
         save_session(user)
@@ -121,7 +120,7 @@ def login_system():
         return user
 
     user = Prompt.ask("Username")
-    pw = Prompt.ask("Password", password=True)
+    pw = Prompt.ask("Password")
     if user in accounts and verify_pw(pw, accounts[user]):
         save_session(user)
         console.print("[green]Logged in successfully![/green]")
@@ -142,7 +141,7 @@ def main_cli(user):
         cmd = Prompt.ask(f"[bold cyan]{user}[/bold cyan] ➜ ", default="").strip()
 
         if cmd.startswith("connect "):
-            current_game = cmd.split(" ", 1)[1]
+            current_game = cmd.split(" ",1)[1]
             console.print(f"[green]Connected to:[/green] {current_game}")
 
         elif cmd.startswith("kick ") or cmd.startswith("announce "):
